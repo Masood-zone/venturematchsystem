@@ -1,0 +1,87 @@
+[
+  {
+    "name": "Engineering & Technical",
+    "slug": "engineering",
+    "skills": [
+      "Software Development",
+      "Mobile Development",
+      "System Architecture",
+      "Cloud & DevOps",
+      "Data Engineering",
+      "Embedded Systems",
+      "Cybersecurity"
+    ]
+  },
+  {
+    "name": "Design & Creative",
+    "slug": "design",
+    "skills": [
+      "Product Design",
+      "UI/UX Design",
+      "Graphic Design",
+      "Brand Identity",
+      "Motion Graphics",
+      "3D Modeling"
+    ]
+  },
+  {
+    "name": "Business & Strategy",
+    "slug": "business",
+    "skills": [
+      "Business Strategy",
+      "Financial Modeling",
+      "Market Research",
+      "Sales",
+      "Business Development",
+      "Operations Management"
+    ]
+  },
+  {
+    "name": "Marketing & Growth",
+    "slug": "marketing",
+    "skills": [
+      "Digital Marketing",
+      "Content Creation",
+      "SEO/SEM",
+      "Social Media",
+      "Email Marketing",
+      "Growth Hacking"
+    ]
+  },
+  {
+    "name": "Science & Research",
+    "slug": "science",
+    "skills": [
+      "Biotechnology",
+      "Data Science",
+      "Machine Learning",
+      "Research & Analysis",
+      "Chemistry",
+      "Environmental Science"
+    ]
+  },
+  {
+    "name": "Communication & Media",
+    "slug": "communication",
+    "skills": [
+      "Public Speaking",
+      "Technical Writing",
+      "Copywriting",
+      "Journalism",
+      "Video Production",
+      "Photography"
+    ]
+  },
+  {
+    "name": "Management & Leadership",
+    "slug": "management",
+    "skills": [
+      "Project Management",
+      "Team Leadership",
+      "Product Management",
+      "Agile/Scrum",
+      "Fundraising",
+      "Legal & Compliance"
+    ]
+  }
+]

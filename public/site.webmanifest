@@ -1,0 +1,20 @@
+{
+  "name": "VentureMatch — Connect Skills. Build Ventures.",
+  "short_name": "VentureMatch",
+  "description": "Connect with USTED Kumasi students across disciplines, find complementary skills, try working together, and build early ventures.",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#0B1D3A",
+  "background_color": "#F3F6F9",
+  "display": "standalone"
+}

@@ -1,0 +1,1027 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model academic_profile {
+  id               String          @id
+  studentProfileId String          @unique
+  faculty          String?
+  department       String?
+  programme        String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  student_profile  student_profile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model academic_programme {
+  id                 String   @id
+  name               String
+  academicUnit       String
+  academicUnitType   String
+  campus             String
+  studyLevel         String
+  awardType          String
+  studyModesJson     String
+  durationYears      Int?
+  sourceAcademicYear String
+  sourceUrl          String
+  sortOrder          Int      @default(0)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime
+
+  @@unique([name, academicUnit, campus])
+  @@index([campus, active, academicUnit])
+}
+
+model account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "account_userId_fkey")
+}
+
+model admin_note {
+  id          String   @id
+  entityType  String
+  entityId    String
+  adminUserId String
+  text        String
+  createdAt   DateTime @default(now())
+  user        user     @relation(fields: [adminUserId], references: [id])
+
+  @@index([adminUserId], map: "admin_note_adminUserId_fkey")
+  @@index([entityType, entityId])
+}
+
+model admin_profile {
+  id        String   @id
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model audit_log {
+  id           String   @id
+  actorUserId  String?
+  action       String
+  entityType   String
+  entityId     String?
+  beforeJson   String?
+  afterJson    String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+  user         user?    @relation(fields: [actorUserId], references: [id])
+
+  @@index([actorUserId], map: "audit_log_actorUserId_fkey")
+  @@index([entityType, entityId, createdAt])
+}
+
+model capability {
+  id                             String                           @id
+  normalizedName                 String?                          @unique @db.VarChar(191)
+  createdById                    String?
+  createdBy                      user?                            @relation("created_capabilities", fields: [createdById], references: [id], onDelete: SetNull)
+  familyId                       String
+  name                           String
+  slug                           String                           @unique
+  description                    String?
+  status                         String                           @default("ACTIVE")
+  sortOrder                      Int                              @default(0)
+  capability_family              capability_family                @relation(fields: [familyId], references: [id])
+  student_capability             student_capability[]
+  venture_capability_requirement venture_capability_requirement[]
+
+  @@index([familyId], map: "capability_familyId_fkey")
+}
+
+model capability_evidence {
+  id                  String             @id
+  studentCapabilityId String
+  type                String
+  title               String
+  description         String?
+  cloudinaryPublicId  String?
+  url                 String?
+  linkUrl             String?
+  verificationStatus  String             @default("UNVERIFIED")
+  createdAt           DateTime           @default(now())
+  student_capability  student_capability @relation(fields: [studentCapabilityId], references: [id], onDelete: Cascade)
+
+  @@index([studentCapabilityId], map: "capability_evidence_studentCapabilityId_fkey")
+}
+
+model capability_family {
+  id         String       @id
+  name       String
+  slug       String       @unique
+  status     String       @default("ACTIVE")
+  sortOrder  Int          @default(0)
+  capability capability[]
+}
+
+model conversation {
+  id                       String                     @id
+  type                     conversation_type          @default(DIRECT)
+  ventureId                String?
+  contextType              String?
+  contextId                String?
+  createdAt                DateTime                   @default(now())
+  venture                  venture?                   @relation(fields: [ventureId], references: [id])
+  conversation_participant conversation_participant[]
+  message                  message[]
+
+  @@index([ventureId], map: "conversation_ventureId_fkey")
+}
+
+model conversation_participant {
+  id             String       @id
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  muted          Boolean      @default(false)
+  lastReadAt     DateTime?
+  conversation   conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           user         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+  @@index([userId], map: "conversation_participant_userId_fkey")
+}
+
+model founder_preference {
+  id                         String                             @id
+  studentProfileId           String                             @unique
+  commitmentLevel            founder_preference_commitmentLevel @default(SIDE_VENTURE)
+  preferredRoleCategory      String?
+  ventureGoal                String?
+  structuredVsFlexible       Int                                @default(3)
+  independentVsCollaborative Int                                @default(3)
+  fastVsDeliberate           Int                                @default(3)
+  createdAt                  DateTime                           @default(now())
+  updatedAt                  DateTime
+  student_profile            student_profile                    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model founder_trial {
+  groupState                group_trial_state?
+  id                        String                      @id
+  ventureId                 String
+  ventureRoomId             String?
+  status                    founder_trial_status        @default(PENDING)
+  startAt                   DateTime?
+  reviewAt                  DateTime?
+  endAt                     DateTime?
+  objective                 String?
+  durationDays              Int                         @default(7)
+  createdAt                 DateTime                    @default(now())
+  venture                   venture                     @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  venture_room              venture_room?               @relation(fields: [ventureRoomId], references: [id])
+  founder_trial_participant founder_trial_participant[]
+  founder_trial_review      founder_trial_review[]
+  founder_trial_task        founder_trial_task[]
+
+  @@index([ventureId], map: "founder_trial_ventureId_fkey")
+  @@index([ventureRoomId], map: "founder_trial_ventureRoomId_fkey")
+}
+
+model group_trial_state {
+  trialId String @id
+  state Json
+  nextTransitionAt DateTime?
+  trial founder_trial @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  versions group_trial_version[]
+
+  @@index([nextTransitionAt])
+}
+
+model group_trial_version {
+  trialId String
+  version Int
+  terms Json
+  trial group_trial_state @relation(fields: [trialId], references: [trialId], onDelete: Cascade)
+
+  @@id([trialId, version])
+}
+
+model venture_email_outbox {
+  id String @id
+  userId String
+  title String
+  body String @db.Text
+  path String
+  attempts Int @default(0)
+  availableAt DateTime @default(now())
+  leaseUntil DateTime?
+  leaseToken String?
+  sentAt DateTime?
+  failedAt DateTime?
+  cancelledAt DateTime?
+  reviewTrialId String?
+  reviewRound Int?
+  failureCode String?
+
+  @@index([sentAt, failedAt, availableAt])
+}
+
+model founder_trial_evidence {
+  id                 String             @id
+  taskId             String
+  submittedBy        String
+  type               String
+  textValue          String?
+  url                String?
+  cloudinaryPublicId String?
+  createdAt          DateTime           @default(now())
+  user               user               @relation(fields: [submittedBy], references: [id])
+  founder_trial_task founder_trial_task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([submittedBy], map: "founder_trial_evidence_submittedBy_fkey")
+  @@index([taskId], map: "founder_trial_evidence_taskId_fkey")
+}
+
+model founder_trial_participant {
+  id             String                                    @id
+  trialId        String
+  userId         String
+  proposedRole   String?
+  decisionStatus founder_trial_participant_decisionStatus?
+  founder_trial  founder_trial                             @relation(fields: [trialId], references: [id], onDelete: Cascade)
+  user           user                                      @relation(fields: [userId], references: [id])
+
+  @@unique([trialId, userId])
+  @@index([userId], map: "founder_trial_participant_userId_fkey")
+}
+
+model founder_trial_review {
+  id                 String                        @id
+  trialId            String
+  reviewerUserId     String
+  communicationScore Int
+  reliabilityScore   Int
+  contributionScore  Int
+  commitmentScore    Int
+  goalAlignmentScore Int
+  workedWellText     String?
+  concernsText       String?
+  decision           founder_trial_review_decision
+  submittedAt        DateTime                      @default(now())
+  user               user                          @relation(fields: [reviewerUserId], references: [id])
+  founder_trial      founder_trial                 @relation(fields: [trialId], references: [id], onDelete: Cascade)
+
+  @@unique([trialId, reviewerUserId])
+  @@index([reviewerUserId], map: "founder_trial_review_reviewerUserId_fkey")
+}
+
+model founder_trial_task {
+  id                     String                    @id
+  trialId                String
+  title                  String
+  purpose                String?
+  assigneeUserId         String?
+  dueAt                  DateTime?
+  status                 founder_trial_task_status @default(PENDING)
+  progressCurrent        Int                       @default(0)
+  progressTarget         Int                       @default(100)
+  createdAt              DateTime                  @default(now())
+  founder_trial_evidence founder_trial_evidence[]
+  user                   user?                     @relation(fields: [assigneeUserId], references: [id])
+  founder_trial          founder_trial             @relation(fields: [trialId], references: [id], onDelete: Cascade)
+
+  @@index([assigneeUserId], map: "founder_trial_task_assigneeUserId_fkey")
+  @@index([trialId], map: "founder_trial_task_trialId_fkey")
+}
+
+model match_factor_score {
+  id                   String               @id
+  recommendationId     String
+  factor               String
+  rawScore             Float
+  weight               Float
+  weightedScore        Float
+  explanationDataJson  String?
+  match_recommendation match_recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  @@index([recommendationId], map: "match_factor_score_recommendationId_fkey")
+}
+
+model match_recommendation {
+  id                     String                      @id
+  ventureId              String
+  candidateUserId        String
+  overallScore           Float
+  algorithmVersion       String
+  configId               String?
+  status                 match_recommendation_status @default(ACTIVE)
+  generatedAt            DateTime                    @default(now())
+  expiresAt              DateTime?
+  match_factor_score     match_factor_score[]
+  user                   user                        @relation(fields: [candidateUserId], references: [id])
+  matching_configuration matching_configuration?     @relation(fields: [configId], references: [id])
+  venture                venture                     @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  venture_invitation     venture_invitation[]
+
+  @@index([candidateUserId, generatedAt])
+  @@index([configId], map: "match_recommendation_configId_fkey")
+  @@index([ventureId, overallScore])
+}
+
+model matching_configuration {
+  id                   String                 @id
+  version              Int
+  capabilityWeight     Float                  @default(0.35)
+  interestWeight       Float                  @default(0.2)
+  commitmentWeight     Float                  @default(0.15)
+  availabilityWeight   Float                  @default(0.1)
+  goalWeight           Float                  @default(0.1)
+  workingStyleWeight   Float                  @default(0.05)
+  evidenceWeight       Float                  @default(0.05)
+  active               Boolean                @default(false)
+  publishedAt          DateTime?
+  publishedBy          String?
+  createdAt            DateTime               @default(now())
+  match_recommendation match_recommendation[]
+}
+
+model message {
+  id                 String               @id
+  conversationId     String
+  senderUserId       String?
+  type               message_type         @default(TEXT)
+  body               String
+  createdAt          DateTime             @default(now())
+  editedAt           DateTime?
+  conversation       conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user               user?                @relation(fields: [senderUserId], references: [id])
+  message_attachment message_attachment[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderUserId], map: "message_senderUserId_fkey")
+}
+
+model message_attachment {
+  id                 String  @id
+  messageId          String
+  cloudinaryPublicId String?
+  url                String
+  resourceType       String
+  bytes              Int?
+  message            message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId], map: "message_attachment_messageId_fkey")
+}
+
+model moderation_action {
+  id          String   @id
+  reportId    String?
+  adminUserId String
+  action      String
+  reason      String?
+  createdAt   DateTime @default(now())
+  user        user     @relation(fields: [adminUserId], references: [id])
+  report      report?  @relation(fields: [reportId], references: [id])
+
+  @@index([adminUserId], map: "moderation_action_adminUserId_fkey")
+  @@index([reportId], map: "moderation_action_reportId_fkey")
+}
+
+model notification {
+  id         String    @id
+  userId     String
+  type       String
+  title      String
+  body       String
+  entityType String?
+  entityId   String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model report {
+  id                String              @id
+  reporterUserId    String
+  entityType        String
+  entityId          String
+  reason            String
+  details           String?
+  priority          String              @default("MEDIUM")
+  status            report_status       @default(PENDING)
+  createdAt         DateTime            @default(now())
+  moderation_action moderation_action[]
+  user              user                @relation(fields: [reporterUserId], references: [id])
+
+  @@index([reporterUserId], map: "report_reporterUserId_fkey")
+  @@index([status, createdAt])
+}
+
+model session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "session_userId_fkey")
+}
+
+model student_availability {
+  id               String          @id
+  studentProfileId String          @unique
+  weeklyHoursBand  String          @default("5-10")
+  timezone         String?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  student_profile  student_profile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model student_capability {
+  id                  String                         @id
+  studentProfileId    String
+  capabilityId        String
+  proficiency         student_capability_proficiency @default(INTERMEDIATE)
+  source              student_capability_source      @default(SELF_SELECTED)
+  confirmed           Boolean                        @default(false)
+  createdAt           DateTime                       @default(now())
+  updatedAt           DateTime
+  capability_evidence capability_evidence[]
+  capability          capability                     @relation(fields: [capabilityId], references: [id])
+  student_profile     student_profile                @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, capabilityId])
+  @@index([capabilityId], map: "student_capability_capabilityId_fkey")
+}
+
+model student_profile {
+  contributionIntro String? @db.Text
+  teamGoals String? @db.Text
+  id                       String                     @id
+  userId                   String                     @unique
+  bio                      String?
+  level                    String?
+  expectedGraduationYear   Int?
+  discoverability          Boolean                    @default(false)
+  onboardingGoal           String?
+  onboardingDraftJson      String?                    @db.Text
+  onboardingVentureId      String?                    @unique
+  onboardingVenture        venture?                   @relation("onboarding_venture", fields: [onboardingVentureId], references: [id], onDelete: SetNull)
+  availabilityStatus       String                     @default("AVAILABLE")
+  profileStrength          Int                        @default(0)
+  onboardingCompleted      Boolean                    @default(false)
+  onboardingStep           String                     @default("goal")
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  academic_profile         academic_profile?
+  founder_preference       founder_preference?
+  student_availability     student_availability?
+  student_capability       student_capability[]
+  user                     user                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student_venture_interest student_venture_interest[]
+}
+
+model student_venture_interest {
+  id               String          @id
+  studentProfileId String
+  sectorId         String
+  strength         Int             @default(1)
+  venture_sector   venture_sector  @relation(fields: [sectorId], references: [id])
+  student_profile  student_profile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, sectorId])
+  @@index([sectorId], map: "student_venture_interest_sectorId_fkey")
+}
+
+model support_ticket {
+  id                String                @id
+  userId            String
+  category          String
+  subject           String
+  description       String
+  relatedEntityType String?
+  relatedEntityId   String?
+  priority          String                @default("MEDIUM")
+  status            support_ticket_status @default(OPEN)
+  referenceCode     String                @unique
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime
+  user              user                  @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "support_ticket_userId_fkey")
+}
+
+model system_setting {
+  id        String   @id
+  key       String   @unique
+  value     String
+  updatedAt DateTime
+  updatedBy String?
+}
+
+model team_charter {
+  id                  String                @id
+  ventureId           String                @unique
+  version             Int                   @default(1)
+  meetingFrequency    String?
+  communicationMethod String?
+  decisionMethod      String?
+  expectationsText    String?
+  status              team_charter_status   @default(DRAFT)
+  createdAt           DateTime              @default(now())
+  venture             venture               @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  team_charter_member team_charter_member[]
+  team_objective      team_objective[]
+}
+
+model team_charter_member {
+  id                    String       @id
+  charterId             String
+  userId                String
+  roleTitle             String?
+  responsibilities      String?
+  weeklyCommitmentHours Int?
+  confirmedAt           DateTime?
+  team_charter          team_charter @relation(fields: [charterId], references: [id], onDelete: Cascade)
+  user                  user         @relation(fields: [userId], references: [id])
+
+  @@unique([charterId, userId])
+  @@index([userId], map: "team_charter_member_userId_fkey")
+}
+
+model team_objective {
+  id           String       @id
+  charterId    String
+  title        String
+  order        Int          @default(0)
+  team_charter team_charter @relation(fields: [charterId], references: [id], onDelete: Cascade)
+
+  @@index([charterId], map: "team_objective_charterId_fkey")
+}
+
+model user {
+  ventureApplications venture_application[]
+  createdCapabilities                                         capability[]                @relation("created_capabilities")
+  id                                                          String                      @id
+  name                                                        String
+  email                                                       String                      @unique
+  emailVerified                                               Boolean                     @default(false)
+  image                                                       String?
+  createdAt                                                   DateTime                    @default(now())
+  updatedAt                                                   DateTime
+  role                                                        String                      @default("student")
+  account                                                     account[]
+  admin_note                                                  admin_note[]
+  admin_profile                                               admin_profile?
+  audit_log                                                   audit_log[]
+  conversation_participant                                    conversation_participant[]
+  founder_trial_evidence                                      founder_trial_evidence[]
+  founder_trial_participant                                   founder_trial_participant[]
+  founder_trial_review                                        founder_trial_review[]
+  founder_trial_task                                          founder_trial_task[]
+  match_recommendation                                        match_recommendation[]
+  message                                                     message[]
+  moderation_action                                           moderation_action[]
+  notification                                                notification[]
+  report                                                      report[]
+  session                                                     session[]
+  student_profile                                             student_profile?
+  support_ticket                                              support_ticket[]
+  team_charter_member                                         team_charter_member[]
+  venture                                                     venture[]
+  venture_contribution                                        venture_contribution[]
+  venture_invitation_venture_invitation_recipientUserIdTouser venture_invitation[]        @relation("venture_invitation_recipientUserIdTouser")
+  venture_invitation_venture_invitation_senderUserIdTouser    venture_invitation[]        @relation("venture_invitation_senderUserIdTouser")
+  venture_member                                              venture_member[]
+  venture_room_participant                                    venture_room_participant[]
+}
+
+model venture {
+  editorStep Int @default(1)
+  applications venture_application[]
+  onboardingProfile                                        student_profile?                 @relation("onboarding_venture")
+  recruitmentContribution                                  String?                          @db.Text
+  weeklyHoursBand                                          String?
+  id                                                       String                           @id
+  ownerId                                                  String
+  name                                                     String
+  slug                                                     String                           @unique
+  shortPitch                                               String?
+  problem                                                  String?                          @db.Text
+  solution                                                 String?
+  targetUsers                                              String?                          @db.Text
+  primarySectorId                                          String?
+  secondarySectorId                                        String?
+  stage                                                    venture_stage                    @default(IDEA)
+  ambition                                                 String?
+  expectedCommitment                                       venture_expectedCommitment       @default(SIDE_VENTURE)
+  logoPublicId                                             String?
+  logoUrl                                                  String?
+  status                                                   venture_status                   @default(DRAFT)
+  createdAt                                                DateTime                         @default(now())
+  updatedAt                                                DateTime
+  conversation                                             conversation[]
+  founder_trial                                            founder_trial[]
+  match_recommendation                                     match_recommendation[]
+  team_charter                                             team_charter?
+  user                                                     user                             @relation(fields: [ownerId], references: [id])
+  venture_sector_venture_primarySectorIdToventure_sector   venture_sector?                  @relation("venture_primarySectorIdToventure_sector", fields: [primarySectorId], references: [id])
+  venture_sector_venture_secondarySectorIdToventure_sector venture_sector?                  @relation("venture_secondarySectorIdToventure_sector", fields: [secondarySectorId], references: [id])
+  venture_capability_requirement                           venture_capability_requirement[]
+  venture_contribution                                     venture_contribution[]
+  venture_dna                                              venture_dna[]
+  venture_health_snapshot                                  venture_health_snapshot[]
+  venture_invitation                                       venture_invitation[]
+  venture_member                                           venture_member[]
+  venture_milestone                                        venture_milestone[]
+  venture_room                                             venture_room[]
+
+  @@index([ownerId])
+  @@index([primarySectorId])
+  @@index([secondarySectorId], map: "venture_secondarySectorId_fkey")
+  @@index([stage, status])
+}
+
+model venture_capability_requirement {
+  id              String     @id
+  ventureId       String
+  capabilityId    String
+  importanceScore Int        @default(5)
+  priority        String     @default("MEDIUM")
+  source          String     @default("MANUAL")
+  confirmed       Boolean    @default(false)
+  capability      capability @relation(fields: [capabilityId], references: [id])
+  venture         venture    @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@unique([ventureId, capabilityId])
+  @@index([capabilityId], map: "venture_capability_requirement_capabilityId_fkey")
+}
+
+model venture_contribution {
+  id                String             @id
+  ventureId         String
+  userId            String
+  milestoneId       String?
+  category          String
+  title             String
+  description       String?
+  evidenceUrl       String?
+  publicId          String?
+  createdAt         DateTime           @default(now())
+  venture_milestone venture_milestone? @relation(fields: [milestoneId], references: [id])
+  user              user               @relation(fields: [userId], references: [id])
+  venture           venture            @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@index([milestoneId], map: "venture_contribution_milestoneId_fkey")
+  @@index([userId], map: "venture_contribution_userId_fkey")
+  @@index([ventureId], map: "venture_contribution_ventureId_fkey")
+}
+
+model venture_dna {
+  id                    String    @id
+  ventureId             String
+  version               Int       @default(1)
+  structuredSummaryJson String?
+  createdAt             DateTime  @default(now())
+  confirmedAt           DateTime?
+  venture               venture   @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@index([ventureId], map: "venture_dna_ventureId_fkey")
+}
+
+model venture_health_snapshot {
+  id                 String   @id
+  ventureId          String
+  overallHealth      Float
+  milestoneProgress  Float
+  capabilityCoverage Float
+  participationScore Float
+  founderAlignment   Float
+  createdAt          DateTime @default(now())
+  algorithmVersion   String   @default("1.0")
+  venture            venture  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@index([ventureId], map: "venture_health_snapshot_ventureId_fkey")
+}
+
+model venture_invitation {
+  id                                            String                                 @id
+  ventureId                                     String
+  senderUserId                                  String
+  recipientUserId                               String
+  recommendationId                              String?
+  proposedRole                                  String?
+  expectedCommitment                            venture_invitation_expectedCommitment?
+  message                                       String?
+  invitationType                                venture_invitation_invitationType      @default(DIRECT_INVITATION)
+  status                                        venture_invitation_status              @default(PENDING)
+  createdAt                                     DateTime                               @default(now())
+  respondedAt                                   DateTime?
+  user_venture_invitation_recipientUserIdTouser user                                   @relation("venture_invitation_recipientUserIdTouser", fields: [recipientUserId], references: [id])
+  match_recommendation                          match_recommendation?                  @relation(fields: [recommendationId], references: [id])
+  user_venture_invitation_senderUserIdTouser    user                                   @relation("venture_invitation_senderUserIdTouser", fields: [senderUserId], references: [id])
+  venture                                       venture                                @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@index([recipientUserId, status])
+  @@index([recommendationId], map: "venture_invitation_recommendationId_fkey")
+  @@index([senderUserId], map: "venture_invitation_senderUserId_fkey")
+  @@index([ventureId], map: "venture_invitation_ventureId_fkey")
+}
+
+model venture_member {
+  id             String                        @id
+  ventureId      String
+  userId         String
+  roleTitle      String?
+  membershipType venture_member_membershipType @default(TEAM_MEMBER)
+  status         venture_member_status         @default(ACTIVE)
+  joinedAt       DateTime                      @default(now())
+  user           user                          @relation(fields: [userId], references: [id])
+  venture        venture                       @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@unique([ventureId, userId])
+  @@index([userId], map: "venture_member_userId_fkey")
+}
+
+model venture_milestone {
+  id                   String                   @id
+  ventureId            String
+  stage                venture_milestone_stage
+  title                String
+  objective            String?
+  expectedOutcome      String?
+  status               venture_milestone_status @default(PLANNED)
+  dueAt                DateTime?
+  progressCurrent      Int                      @default(0)
+  progressTarget       Int                      @default(100)
+  createdAt            DateTime                 @default(now())
+  completedAt          DateTime?
+  venture_contribution venture_contribution[]
+  venture              venture                  @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+
+  @@index([ventureId], map: "venture_milestone_ventureId_fkey")
+}
+
+model venture_room {
+  id                       String                     @id
+  ventureId                String
+  status                   venture_room_status        @default(OPEN)
+  createdAt                DateTime                   @default(now())
+  founder_trial            founder_trial[]
+  venture                  venture                    @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  venture_room_participant venture_room_participant[]
+
+  @@index([ventureId], map: "venture_room_ventureId_fkey")
+}
+
+model venture_room_participant {
+  id           String       @id
+  roomId       String
+  userId       String
+  proposedRole String?
+  status       String       @default("ACTIVE")
+  venture_room venture_room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user         user         @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+  @@index([userId], map: "venture_room_participant_userId_fkey")
+}
+
+model venture_sector {
+  id                                                String                     @id
+  name                                              String
+  slug                                              String                     @unique
+  description                                       String?
+  status                                            String                     @default("ACTIVE")
+  sortOrder                                         Int                        @default(0)
+  student_venture_interest                          student_venture_interest[]
+  venture_venture_primarySectorIdToventure_sector   venture[]                  @relation("venture_primarySectorIdToventure_sector")
+  venture_venture_secondarySectorIdToventure_sector venture[]                  @relation("venture_secondarySectorIdToventure_sector")
+}
+
+model availability_option {
+  id        String  @id
+  label     String
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+}
+
+model verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime?
+}
+
+enum conversation_type {
+  DIRECT
+  VENTURE
+}
+
+enum venture_room_status {
+  OPEN
+  TRIAL_ACTIVE
+  CLOSED
+}
+
+enum founder_preference_commitmentLevel {
+  CASUAL
+  SIDE_VENTURE
+  SERIOUS
+  FULL_TIME
+}
+
+enum venture_milestone_stage {
+  IDEA
+  VALIDATION
+  PROTOTYPE
+  EARLY_LAUNCH
+  OPERATE
+}
+
+enum message_type {
+  TEXT
+  SYSTEM
+  ATTACHMENT
+}
+
+enum founder_trial_status {
+  PENDING
+  ACTIVE
+  UNDER_REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum student_capability_proficiency {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum founder_trial_participant_decisionStatus {
+  CONTINUE
+  EXTEND
+  STOP
+}
+
+enum student_capability_source {
+  SELF_SELECTED
+  AI_EXTRACTED
+  ADMIN_ADDED
+}
+
+enum venture_member_membershipType {
+  FOUNDER
+  CO_FOUNDER
+  TEAM_MEMBER
+  SPECIALIST
+}
+
+enum venture_member_status {
+  ACTIVE
+  INVITED
+  LEFT
+  REMOVED
+}
+
+enum venture_milestone_status {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum match_recommendation_status {
+  ACTIVE
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum founder_trial_task_status {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+}
+
+enum venture_invitation_expectedCommitment {
+  CASUAL
+  SIDE_VENTURE
+  SERIOUS
+  FULL_TIME
+}
+
+enum report_status {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum team_charter_status {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum venture_invitation_invitationType {
+  MATCH_INVITATION
+  DIRECT_INVITATION
+}
+
+enum support_ticket_status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum venture_invitation_status {
+  PENDING
+  INTERESTED
+  DECLINED
+  WITHDRAWN
+  TRIAL_PROPOSED
+}
+
+enum founder_trial_review_decision {
+  CONTINUE
+  EXTEND
+  STOP
+}
+
+enum venture_stage {
+  IDEA
+  VALIDATION
+  PROTOTYPE
+  EARLY_LAUNCH
+  OPERATE
+}
+
+enum venture_expectedCommitment {
+  CASUAL
+  SIDE_VENTURE
+  SERIOUS
+  FULL_TIME
+}
+
+enum venture_status {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+
+model venture_application {
+  id String @id
+  ventureId String
+  applicantUserId String
+  message String @db.Text
+  profileSnapshot String @db.MediumText
+  status venture_application_status @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  respondedAt DateTime?
+  venture venture @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  applicant user @relation(fields: [applicantUserId], references: [id], onDelete: Cascade)
+
+  @@unique([ventureId, applicantUserId])
+  @@index([applicantUserId, status])
+  @@index([ventureId, status])
+}
+
+enum venture_application_status {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
