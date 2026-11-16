@@ -12,20 +12,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { User } from "better-auth";
+import { useAccountEntry } from "@/hooks/auth/use-account-entry";
 import { useLogOut } from "@/hooks/auth/use-auth";
 
 export function UserAvatarDropdown({
   user,
-  dashboardHref,
-  dashboardLabel = "Dashboard",
   compact = false,
 }: {
   user: User & { role?: string | null };
-  dashboardHref?: string;
-  dashboardLabel?: string;
   compact?: boolean;
 }) {
   const { mutate: logOut, isPending: isSigningOut, isError, reset } = useLogOut();
+  const entry = useAccountEntry();
+  const dashboardHref = user.role === "student" ? entry.href : undefined;
   const name = user.name.trim() || user.email;
   const initial = Array.from(name)[0]?.toLocaleUpperCase() || "?";
 
@@ -37,7 +36,7 @@ export function UserAvatarDropdown({
     >
       <DropdownMenuTrigger
         aria-label={`Account menu for ${name}`}
-        className={`flex min-w-0 max-w-52 items-center gap-3 rounded-full border border-border bg-card p-1.5 text-left shadow-sm transition-colors hover:bg-secondary data-popup-open:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${compact ? "shrink-0" : "pr-5"}`}
+        className={`flex min-w-0 max-w-52 items-center gap-3 rounded-full border border-border bg-card p-1.5 text-left transition-colors hover:bg-secondary data-popup-open:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${compact ? "shrink-0" : "pr-5"}`}
       >
         <Avatar className={`${compact ? "size-9" : "size-12"} after:border-0`}>
           {user.image ? <AvatarImage src={user.image} alt="" /> : null}
@@ -49,15 +48,15 @@ export function UserAvatarDropdown({
           <span className="block truncate text-base font-semibold leading-6 text-primary">
             {name}
           </span>
-          <span className="block truncate text-sm font-normal uppercase leading-5 text-muted-foreground">
-            {user.role || "Member"}
+          <span className="block truncate text-sm font-normal capitalize leading-5 text-muted-foreground">
+            {entry.displayLabel}
           </span>
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="w-70 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg ring-0"
+        className="w-70 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-popover p-1.5 text-popover-foreground shadow-none ring-0"
       >
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-[18px] pt-3.5 pb-2.5 font-normal">
@@ -70,6 +69,9 @@ export function UserAvatarDropdown({
             >
               {user.email}
             </span>
+            <span className="mt-1 block text-xs font-medium capitalize text-functional-teal">
+              {entry.displayLabel}
+            </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="mx-0 my-1 bg-border" />
           <DropdownMenuItem
@@ -77,7 +79,7 @@ export function UserAvatarDropdown({
             render={dashboardHref ? <Link href={dashboardHref} prefetch={false} /> : undefined}
             className="min-h-11 cursor-pointer px-[18px] text-base font-normal"
           >
-            {dashboardLabel}
+            {entry.label}
           </DropdownMenuItem>
           {user.role === "student" && <DropdownMenuItem render={<Link href="/profile/edit" prefetch={false} />} className="min-h-11 cursor-pointer px-[18px] text-base font-normal">Edit my profile</DropdownMenuItem>}
           <DropdownMenuItem

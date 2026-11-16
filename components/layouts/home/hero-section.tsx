@@ -1,3 +1,4 @@
+import HeroMessage from "./hero-message";
 import { AccountEntryLink } from "@/components/common/account-entry-link";
 import Link from "next/link";
 import { MaterialSymbol } from "@/components/common/MaterialSymbol";
@@ -12,14 +13,7 @@ export default function HeroSection() {
               <span className="w-1.5 h-1.5 rounded-full bg-functional-teal"></span>
               <span>USTED Kumasi Campus Collaboration</span>
             </div>
-            <h1 className="font-sans text-[32px] sm:text-[48px] leading-[1.17] font-bold tracking-tight text-primary tracking-tight font-bold max-w-xl text-balance">
-              Your next venture starts with the people around you.
-            </h1>
-            <p className="font-sans text-base text-muted-foreground max-w-lg leading-relaxed">
-              Connect with students across USTED who bring different
-              skills. Find a team to contribute to, or bring your own idea
-              and meet people to build it with.
-            </p>
+            <HeroMessage />
             <div className="flex flex-wrap items-center gap-4 pt-1">
               <AccountEntryLink
                 className="inline-flex items-center justify-center bg-primary text-white font-sans text-sm font-semibold rounded-xl px-7 py-3.5 hover:bg-primary transition-all shadow-[0_4px_20px_-2px_rgba(11,29,58,0.16)]"

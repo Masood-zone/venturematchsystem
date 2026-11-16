@@ -2,7 +2,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { accountDestinationKey } from "@/hooks/auth/use-account-entry";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Brand, SiteFooter } from "@/components/common/site-shell";
 import { MaterialSymbol } from "@/components/common/MaterialSymbol";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,7 @@ function WizardEditor({
   context: EntryContext;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const logout = useLogOut();
   const [saved, setSaved] = useState(initial);
   const ideaDraft = readDraft(initial.drafts, "idea");
@@ -254,6 +256,7 @@ function WizardEditor({
         publish: publishIdea,
         contributionIntro, teamGoals,
       });
+      void queryClient.invalidateQueries({ queryKey: accountDestinationKey });
       router.replace(completedEntry(context, result.destination));
       router.refresh();
     } catch (error) {

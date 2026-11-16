@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { accountDestinationKey } from "@/hooks/auth/use-account-entry";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { VentureEditorInput } from "@/lib/venture-editor";
@@ -13,6 +15,7 @@ export default function VentureEditor({ id, initial, sectors, skills, availabili
   id?: string; initial: VentureEditorInput; sectors: Option[]; skills: Option[]; availability: { id: string; label: string }[]; owner: string; published: boolean;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [ventureId, setVentureId] = useState(id);
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState(published ? 1 : initial.step);
@@ -47,6 +50,7 @@ export default function VentureEditor({ id, initial, sectors, skills, availabili
           });
           if (!publication.ok) throw new Error((await publication.json()).error);
         }
+        if (!published) void queryClient.invalidateQueries({ queryKey: accountDestinationKey });
         router.push(`/ventures/${currentId}`);
       } else {
         setStep(nextStep);

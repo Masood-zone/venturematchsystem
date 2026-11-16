@@ -30,7 +30,6 @@ export function Brand() {
 
 export function SiteHeader({ auth = false }: { auth?: boolean }) {
   const { data: session, isPending } = useSession();
-  const entry = useAccountEntry();
   return (
     <header className="sticky top-0 z-50 border-b border-primary/5 bg-white/95 backdrop-blur-xl">
       <div
@@ -80,11 +79,7 @@ export function SiteHeader({ auth = false }: { auth?: boolean }) {
             </span>
           </div>
         ) : session?.user ? (
-          <UserAvatarDropdown
-            user={session.user}
-            dashboardHref={session.user.role === "student" ? entry.href : undefined}
-            dashboardLabel={entry.label}
-          />
+          <UserAvatarDropdown user={session.user} />
         ) : (
           <div className="flex items-center gap-3 sm:gap-6 text-sm font-semibold">
             <Link

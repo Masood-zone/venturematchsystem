@@ -30,7 +30,7 @@ export default function StudentShell({ children }: { children: ReactNode }) {
           <Link href="/ventures/notifications" aria-label="Notifications" aria-current={pathname === "/ventures/notifications" ? "page" : undefined} className="inline-flex size-11 items-center justify-center rounded-xl text-primary hover:bg-secondary">
             <MaterialSymbol icon="notifications" className="text-2xl" />
           </Link>
-          {session?.user ? <UserAvatarDropdown compact user={session.user} dashboardHref="/auth/continue" dashboardLabel="My starting page" /> : <span role="status" className="text-xs text-muted-foreground">Loading account…</span>}
+          {session?.user ? <UserAvatarDropdown compact user={session.user} /> : <span role="status" className="text-xs text-muted-foreground">Loading account…</span>}
         </div>
       </div>
     </header>
