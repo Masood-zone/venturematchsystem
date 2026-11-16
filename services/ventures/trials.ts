@@ -20,6 +20,43 @@ function notice(tx: Tx, id: string, event: string, recipients: string[], title: 
   return notify(tx, { event: `trial:${id}:${event}`, recipients, title, body, path, email });
 }
 
+async function findTrialCandidates(tx: Tx, ventureId: string, ownerId: string, candidateIds?: string[]) {
+  const candidateId = { not: ownerId, in: candidateIds };
+  const [invitations, members] = await Promise.all([
+    tx.venture_invitation.findMany({
+      where: {
+        ventureId, senderUserId: ownerId, status: { in: ["INTERESTED", "TRIAL_PROPOSED"] },
+        recipientUserId: candidateId, user_venture_invitation_recipientUserIdTouser: { role: "student" },
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: { recipientUserId: true, proposedRole: true, user_venture_invitation_recipientUserIdTouser: { select: { name: true } } },
+    }),
+    tx.venture_member.findMany({
+      where: { ventureId, userId: candidateId, status: "ACTIVE", user: { role: "student" } },
+      orderBy: [{ joinedAt: "asc" }, { userId: "asc" }],
+      select: { userId: true, roleTitle: true, user: { select: { name: true } } },
+    }),
+  ]);
+  const candidates = new Map(invitations.map((invitation) => [invitation.recipientUserId, {
+    id: invitation.recipientUserId,
+    name: invitation.user_venture_invitation_recipientUserIdTouser.name,
+    role: invitation.proposedRole,
+  }]));
+  for (const member of members) {
+    candidates.set(member.userId, { id: member.userId, name: member.user.name, role: member.roleTitle });
+  }
+  return candidates;
+}
+
+export async function eligibleTrialCandidates(ventureId: string, userId: string) {
+  const venture = await db.venture.findFirst({
+    where: { id: ventureId, ownerId: userId, status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (!venture) return null;
+  return [...(await findTrialCandidates(db, ventureId, userId)).values()];
+}
+
 async function buildPlan(tx: Tx, venture: Venture, plan: TrialPlan, now: Date) {
   if (new Set(plan.candidateIds).size !== plan.candidateIds.length ||
       plan.candidateIds.includes(venture.ownerId)) fail("Choose distinct candidates.", 400);
@@ -29,19 +66,13 @@ async function buildPlan(tx: Tx, venture: Venture, plan: TrialPlan, now: Date) {
   }
   const [owner, candidates] = await Promise.all([
     tx.user.findUniqueOrThrow({ where: { id: venture.ownerId }, select: { name: true } }),
-    tx.venture_invitation.findMany({
-      where: { ventureId: venture.id, senderUserId: venture.ownerId, status: { in: ["INTERESTED", "TRIAL_PROPOSED"] },
-        recipientUserId: { in: plan.candidateIds }, user_venture_invitation_recipientUserIdTouser: {
-          role: "student", venture_member: { none: { ventureId: venture.id, status: "ACTIVE" } },
-        } },
-      orderBy: { createdAt: "desc" },
-      select: { recipientUserId: true, proposedRole: true, user_venture_invitation_recipientUserIdTouser: { select: { name: true } } },
-    }),
+    findTrialCandidates(tx, venture.id, venture.ownerId, plan.candidateIds),
   ]);
-  const byId = new Map(candidates.reverse().map((candidate) => [candidate.recipientUserId, candidate]));
-  if (plan.candidateIds.some((id) => !byId.has(id))) fail("Select candidates who accepted interest and are available for a trial.");
+  if (plan.candidateIds.some((id) => !candidates.has(id))) {
+    fail("Select active venture members or candidates who accepted an invitation.");
+  }
   const roster = [{ id: venture.ownerId, name: owner.name, role: "Owner" },
-    ...plan.candidateIds.map((id) => ({ id, name: byId.get(id)!.user_venture_invitation_recipientUserIdTouser.name, role: byId.get(id)!.proposedRole })),
+    ...plan.candidateIds.map((id) => candidates.get(id)!),
   ].map((member) => ({ ...member, response: "PENDING" as const, withdrawn: false }));
   if (plan.tasks.some((task) => task.assigneeId && !roster.some((member) => member.id === task.assigneeId))) {
     fail("Assign tasks to people on the roster.", 400);

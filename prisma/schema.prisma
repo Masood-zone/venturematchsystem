@@ -734,7 +734,7 @@ model venture_invitation {
   recommendationId                              String?
   proposedRole                                  String?
   expectedCommitment                            venture_invitation_expectedCommitment?
-  message                                       String?
+  message                                       String?                                @db.Text
   invitationType                                venture_invitation_invitationType      @default(DIRECT_INVITATION)
   status                                        venture_invitation_status              @default(PENDING)
   createdAt                                     DateTime                               @default(now())

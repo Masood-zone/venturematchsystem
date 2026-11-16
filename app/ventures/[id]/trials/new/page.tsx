@@ -3,8 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import DashboardLoading from "@/components/ventures/dashboard-loading";
 import { Workspace, panelClass } from "@/components/ventures/workspace";
 import { getCurrentSession } from "@/services/auth/session";
-import { eligibleTrialCandidates } from "@/services/ventures/recruitment";
-import { trialDetail } from "@/services/ventures/trials";
+import { eligibleTrialCandidates, trialDetail } from "@/services/ventures/trials";
 import { TrialPlanForm } from "../../../trial-plan-form";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ previous?: string }> };
@@ -27,7 +26,7 @@ async function Propose({ params, searchParams }: Props) {
         candidates={candidates} previousId={source?.id} initial={source ? {
           objective: source.plan.objective, expectations: "", candidateIds: [], startDay: "", reviewAt: "",
           tasks: source.plan.tasks.map(({ title, description }) => ({ title, description, assigneeId: null })),
-        } : undefined} /> : <p>No interested candidates are available. Invite students to discuss a role first.</p>}
+        } : undefined} /> : <p>No eligible teammates yet. Approve a venture application or wait for an invited student to indicate interest.</p>}
     </section>
   </Workspace>;
 }

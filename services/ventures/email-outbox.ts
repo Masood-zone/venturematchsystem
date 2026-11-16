@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
 import { emailService } from "@/services/email/email-service";
 import { outstandingReviewers, reviewDeadline, trialState } from "@/lib/group-trial";
@@ -8,13 +9,21 @@ const maxAttempts = 5;
 
 export async function deliverVentureEmails() {
   if (process.env.VENTURE_EMAIL_DELIVERY !== "true") return { delivered: 0, failed: 0 };
+  return deliverReadyEmails({}, 50);
+}
+
+export async function deliverInvitationEmail(id: string) {
+  await deliverReadyEmails({ id }, 1);
+}
+
+async function deliverReadyEmails(scope: Prisma.venture_email_outboxWhereInput, limit: number) {
   const now = new Date();
   const ready = {
     sentAt: null, failedAt: null, cancelledAt: null, availableAt: { lte: now },
     OR: [{ leaseUntil: null }, { leaseUntil: { lte: now } }],
   };
   const rows = await db.venture_email_outbox.findMany({
-    where: ready, orderBy: [{ availableAt: "asc" }, { id: "asc" }], take: 50,
+    where: { AND: [scope, ready] }, orderBy: [{ availableAt: "asc" }, { id: "asc" }], take: limit,
   });
   let delivered = 0;
   let failed = 0;

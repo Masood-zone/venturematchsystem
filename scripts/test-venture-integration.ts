@@ -4,6 +4,7 @@ import test from "node:test";
 import { randomUUID } from "node:crypto";
 import { db } from "../lib/db";
 import { trialState, type TrialPlan, type TrialState } from "../lib/group-trial";
+import { invitationInput } from "../lib/venture-recruitment";
 import { publishVenture } from "../services/onboarding/service";
 import { saveVenture } from "../services/ventures/editor";
 import { actOnInvitation, invitationDetail, invite } from "../services/ventures/recruitment";
@@ -53,10 +54,12 @@ test("TiDB migration supports venture publication, private recruitment and concu
 
     for (const candidate of [a, b]) {
       const profile = await db.student_profile.findUniqueOrThrow({ where: { userId: candidate.id } });
-      const input = { candidateId: profile.id, role: "Researcher", message: "Would you like to discuss interviews?" };
+      const message = "Would you like to discuss interviews? ".repeat(60).slice(0, 1999) + "?";
+      const input = invitationInput.parse({ candidateId: profile.id, role: "Researcher", message, commitment: "SERIOUS" });
       const results = await Promise.all([invite(ventureId, owner.id, input), invite(ventureId, owner.id, input)]);
       assert.equal(results[0].id, results[1].id);
       const [{ id }] = results;
+      assert.equal((await invitationDetail(id, candidate.id))?.message, message);
       assert.equal(await invitationDetail(id, outsider.id), null);
       await actOnInvitation(id, candidate.id, { action: "interest" });
       assert.equal(await db.venture_member.count({ where: { ventureId } }), 0);
