@@ -12,6 +12,11 @@ import { DashboardEmpty, DashboardHeading, SetupReminder } from "@/components/ve
 import DashboardLoading from "@/components/ventures/dashboard-loading";
 import OpportunityCard from "@/components/ventures/opportunity-card";
 
+const sections = [
+  { id: "filters", label: "Filters" },
+  { id: "opportunities", label: "Opportunities" },
+];
+
 export default function ExplorePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return <Suspense fallback={<DashboardLoading />}><Explore searchParams={searchParams} /></Suspense>;
 }
@@ -30,11 +35,11 @@ async function Explore({ searchParams }: { searchParams: Promise<SearchParams> }
   const sectorNames = new Map(sectors.map((sector) => [sector.id, sector.name]));
   const hourLabels = new Map(hours.map((option) => [option.id, option.label]));
   const filtered = Boolean(filters.q || filters.sector || filters.hours);
-  return <StudentShell><main id="main-content" className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-8 sm:py-12">
+  return <StudentShell sections={sections}><main id="main-content" className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-8 sm:py-12">
     {!profile?.onboardingCompleted && <SetupReminder />}
     <DashboardHeading eyebrow="USTED student venture directory" title="Explore opportunities">Find student ideas seeking complementary skills. Explore the brief, see what help is needed, and discover where you could contribute.</DashboardHeading>
     {profile?.onboardingCompleted && <p className="text-sm text-muted-foreground">Ready for your next team? <Link href="/profile/edit" className="font-semibold text-functional-teal underline">Update your skills and team preferences</Link></p>}
-    <Form key={JSON.stringify(filters)} action="/explore" className="space-y-5 rounded-2xl border border-primary/5 bg-white p-5 shadow-sm sm:p-7" aria-label="Filter opportunities">
+    <Form id="filters" tabIndex={-1} key={JSON.stringify(filters)} action="/explore" className="scroll-mt-24 space-y-5 rounded-2xl border border-primary/5 bg-white p-5 shadow-sm sm:p-7" aria-label="Filter opportunities">
       <div>
         <label htmlFor="venture-search" className="sr-only">Search by venture title, problem, or required skill</label>
         <div className="flex items-center gap-3 rounded-xl bg-secondary px-4">
@@ -61,7 +66,7 @@ async function Explore({ searchParams }: { searchParams: Promise<SearchParams> }
         <Link href="/explore" className="inline-flex min-h-12 items-center justify-center px-3 text-sm font-medium text-muted-foreground underline hover:text-functional-teal">Reset filters</Link>
       </div>
     </Form>
-    <section aria-labelledby="opportunities-heading" className="space-y-4">
+    <section id="opportunities" tabIndex={-1} aria-labelledby="opportunities-heading" className="scroll-mt-24 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="opportunities-heading" className="text-lg font-semibold text-primary">{filtered ? "Search results" : "Published opportunities"}</h2>
         <p className="text-xs text-muted-foreground">{ventures.length === 100 ? "Showing the latest 100 results. Narrow your filters to find more." : `${ventures.length} ${ventures.length === 1 ? "opportunity" : "opportunities"}`}</p>
