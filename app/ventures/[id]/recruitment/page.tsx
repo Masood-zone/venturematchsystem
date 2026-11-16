@@ -202,10 +202,10 @@ async function Recruitment({ params, searchParams }: Props) {
           <section className={panelClass}>
             <h2 className="text-xl font-bold text-primary">Group trials</h2>
             {!!candidates?.length && (
-                <Link href={`/ventures/${id}/trials/new`} className={linkClass}>
-                  Propose group trial
-                </Link>
-              )}
+              <Link href={`/ventures/${id}/trials/new`} className={linkClass}>
+                Propose group trial
+              </Link>
+            )}
             {trials.length ? (
               <ul>
                 {trials.map((trial) => (

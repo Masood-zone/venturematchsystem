@@ -8,7 +8,7 @@ import { invitationInput } from "../lib/venture-recruitment";
 import { publishVenture } from "../services/onboarding/service";
 import { saveVenture } from "../services/ventures/editor";
 import { actOnInvitation, invitationDetail, invite } from "../services/ventures/recruitment";
-import { actOnTrial, advanceTrial, proposeTrial, trialDetail } from "../services/ventures/trials";
+import { actOnTrial, advanceTrial, eligibleTrialCandidates, proposeTrial, trialDetail } from "../services/ventures/trials";
 
 const review = { decision: "CONTINUE" as const, scores: { alignment: 4, commitment: 4, communication: 4, contribution: 4, reliability: 4 }, workedWell: "Private interview notes", concerns: "" };
 
@@ -52,28 +52,39 @@ test("TiDB migration supports venture publication, private recruitment and concu
     assert.equal((await db.venture.findUniqueOrThrow({ where: { id: ventureId } })).editorStep, 2);
     assert.equal((await publishVenture(owner.id, ventureId)).status, "ACTIVE");
 
-    for (const candidate of [a, b]) {
-      const profile = await db.student_profile.findUniqueOrThrow({ where: { userId: candidate.id } });
-      const message = "Would you like to discuss interviews? ".repeat(60).slice(0, 1999) + "?";
-      const input = invitationInput.parse({ candidateId: profile.id, role: "Researcher", message, commitment: "SERIOUS" });
-      const results = await Promise.all([invite(ventureId, owner.id, input), invite(ventureId, owner.id, input)]);
-      assert.equal(results[0].id, results[1].id);
-      const [{ id }] = results;
-      assert.equal((await invitationDetail(id, candidate.id))?.message, message);
-      assert.equal(await invitationDetail(id, outsider.id), null);
-      await actOnInvitation(id, candidate.id, { action: "interest" });
-      assert.equal(await db.venture_member.count({ where: { ventureId } }), 0);
-      await actOnInvitation(id, owner.id, { action: "message", id: randomUUID(), text: "Let's discuss the interview plan." });
-      assert.equal((await invitationDetail(id, candidate.id))?.messages.length, 1);
-    }
+    await db.venture_member.create({
+      data: { id: randomUUID(), ventureId, userId: a.id, status: "ACTIVE", roleTitle: "Interviewer" },
+    });
+    assert.deepEqual(await eligibleTrialCandidates(ventureId, owner.id), [
+      { id: a.id, name: a.name, role: "Interviewer" },
+    ]);
+    assert.equal(await eligibleTrialCandidates(ventureId, outsider.id), null);
+
+    const candidate = b;
+    const profile = await db.student_profile.findUniqueOrThrow({ where: { userId: candidate.id } });
+    const message = "Would you like to discuss interviews? ".repeat(60).slice(0, 1999) + "?";
+    const input = invitationInput.parse({ candidateId: profile.id, role: "Researcher", message, commitment: "SERIOUS" });
+    const results = await Promise.all([invite(ventureId, owner.id, input), invite(ventureId, owner.id, input)]);
+    assert.equal(results[0].id, results[1].id);
+    const [{ id: invitationId }] = results;
+    assert.equal((await invitationDetail(invitationId, candidate.id))?.message, message);
+    assert.equal(await invitationDetail(invitationId, outsider.id), null);
+    await actOnInvitation(invitationId, candidate.id, { action: "interest" });
+    assert.equal(await db.venture_member.count({ where: { ventureId } }), 1);
+    await actOnInvitation(invitationId, owner.id, { action: "message", id: randomUUID(), text: "Let's discuss the interview plan." });
+    assert.equal((await invitationDetail(invitationId, candidate.id))?.messages.length, 1);
 
     const plan: TrialPlan = {
       objective: "Validate demand", expectations: "One interview each", candidateIds: [a.id, b.id],
       startDay: new Date().toISOString().slice(0, 10), reviewAt: new Date(Date.now() + 3_600_000).toISOString(),
       tasks: [{ title: "Interview", description: "Record evidence", assigneeId: a.id }],
     };
+    await assert.rejects(proposeTrial(ventureId, owner.id, {
+      id: randomUUID(), plan: { ...plan, candidateIds: [a.id, outsider.id] },
+    }), /select active venture members/i);
     const sourceId = randomUUID();
     await proposeTrial(ventureId, owner.id, { id: sourceId, plan });
+    assert.equal((await trialDetail(sourceId, a.id))?.viewer.response, "PENDING");
     await setClock(sourceId, new Date(Date.now() - 1_000).toISOString(), "ACTIVE");
     await advanceTrial(sourceId);
     await Promise.all([
