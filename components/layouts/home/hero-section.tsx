@@ -15,9 +15,7 @@ export default function HeroSection() {
             </div>
             <HeroMessage />
             <div className="flex flex-wrap items-center gap-4 pt-1">
-              <AccountEntryLink
-                className="inline-flex items-center justify-center bg-primary text-white font-sans text-sm font-semibold rounded-xl px-7 py-3.5 hover:bg-primary transition-all shadow-[0_4px_20px_-2px_rgba(11,29,58,0.16)]"
-              >
+              <AccountEntryLink className="inline-flex items-center justify-center bg-primary text-white font-sans text-sm font-semibold rounded-xl px-7 py-3.5 hover:bg-primary transition-all shadow-[0_4px_20px_-2px_rgba(11,29,58,0.16)]">
                 Get started
               </AccountEntryLink>
               <Link
@@ -66,7 +64,7 @@ export default function HeroSection() {
                   </div>
                 </div>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary/70 text-muted-foreground font-sans text-[11px] font-medium">
-                  Illustrative example · Campus Threads
+                  Campus Threads
                 </span>
               </div>
 
