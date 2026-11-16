@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
@@ -15,17 +16,18 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { MaterialSymbol } from "@/components/common/MaterialSymbol";
+import AuthSwitchLink from "@/components/common/auth-switch-link";
 import {
   // FormDivider,
   // InstitutionalButton,
   PasswordField,
-  PreviewNotice,
 } from "../auth-fields";
 import {
   registerSchema,
   type RegisterValues,
 } from "../auth-schemas";
 import { useRegister } from "@/hooks/auth/use-auth";
+import { RegisterError } from "@/services/auth/register";
 
 export default function RegisterForm() {
   const catalogue = useQuery({ queryKey: ["programmes"], queryFn: async () => {
@@ -34,7 +36,7 @@ export default function RegisterForm() {
     return (await response.json() as { programmes: string[] }).programmes;
   } });
   const programmes = catalogue.data ?? [];
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState<{ message: string; emailTaken?: true } | null>(null);
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -51,6 +53,7 @@ export default function RegisterForm() {
 
   function onSubmit(values: RegisterValues) {
     if (isPending) return;
+    setError(null);
     register(
       {
         name: values.name,
@@ -60,7 +63,16 @@ export default function RegisterForm() {
       },
       {
         onError: (error) => {
-          setMessage(error.message);
+          if (error instanceof RegisterError && error.reason === "email-taken") {
+            if (form.getValues("email").trim().toLowerCase() === values.email.toLowerCase()) {
+              setError({ message: error.message, emailTaken: true });
+            }
+            return;
+          }
+
+          setError({ message: error instanceof RegisterError
+            ? error.message
+            : "Account creation is temporarily unavailable. Please try again." });
         },
       },
     );
@@ -68,16 +80,9 @@ export default function RegisterForm() {
 
   return (
     <div className="space-y-6">
-      {/* <InstitutionalButton
-        register
-        onPreview={() =>
-          setMessage("Student SSO is not connected in this design preview.")
-        }
-      />
-      <FormDivider>Or register with email</FormDivider> */}
       <form
         noValidate
-        onSubmit={form.handleSubmit(onSubmit, () => setMessage(""))}
+        onSubmit={form.handleSubmit(onSubmit, () => setError(null))}
         className="space-y-5"
       >
         <Controller
@@ -120,13 +125,17 @@ export default function RegisterForm() {
               <Input
                 {...field}
                 id="register-email"
+                onChange={(event) => {
+                  field.onChange(event);
+                  if (error?.emailTaken) setError(null);
+                }}
                 type="email"
                 autoComplete="email"
                 placeholder="student.id@usted.edu.gh"
                 required
                 className="auth-input"
-                aria-invalid={fieldState.invalid}
-                aria-describedby={`register-email-hint${fieldState.invalid ? " register-email-error" : ""}`}
+                aria-invalid={fieldState.invalid || error?.emailTaken}
+                aria-describedby={`register-email-hint${fieldState.invalid ? " register-email-error" : ""}${error?.emailTaken ? " register-error" : ""}`}
               />
               <FieldDescription id="register-email-hint" className="text-xs">
                 Use your university email to help identify your campus
@@ -335,7 +344,19 @@ export default function RegisterForm() {
           <MaterialSymbol icon="check_circle" className="text-lg" />
         </Button>
       </form>
-      <PreviewNotice message={message} />
+      {error && (
+        <div className="space-y-2 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">
+          <p id="register-error" role="alert">{error.message}</p>
+          {error.emailTaken && (
+            <p className="text-foreground">
+              <AuthSwitchLink href="/login" className="font-semibold underline">Sign in</AuthSwitchLink>
+              {" or "}
+              <Link href="/forgot-password" className="font-semibold underline">reset your password</Link>
+              {". To create a new account, use another institutional email address."}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
