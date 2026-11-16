@@ -47,8 +47,8 @@ export default function StudentShell({
       <header className="sticky top-0 z-40 border-b border-primary/5 bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8">
           <Brand />
-          <div className="flex items-center gap-2">
-            <Link href={notifications.href} aria-label={notifications.label} aria-current={active(notifications.href) ? "page" : undefined} className="inline-flex size-11 items-center justify-center rounded-xl text-primary hover:bg-secondary md:hidden">
+          <div className="flex min-w-0 items-center gap-2">
+            <Link href={notifications.href} aria-label={notifications.label} aria-current={active(notifications.href) ? "page" : undefined} className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-primary hover:bg-secondary md:hidden">
               <MaterialSymbol icon={notifications.icon} className="text-2xl" />
             </Link>
             {session?.user ? <UserAvatarDropdown compact user={session.user} /> : <span role="status" className="text-xs text-muted-foreground">Loading account…</span>}

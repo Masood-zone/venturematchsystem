@@ -36,7 +36,7 @@ export function UserAvatarDropdown({
     >
       <DropdownMenuTrigger
         aria-label={`Account menu for ${name}`}
-        className={`flex min-w-0 max-w-52 items-center gap-3 rounded-full border border-border bg-card p-1.5 text-left transition-colors hover:bg-secondary data-popup-open:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${compact ? "shrink-0" : "pr-5"}`}
+        className={`flex min-w-0 items-center rounded-full border border-border bg-card p-1.5 text-left transition-colors hover:bg-secondary data-popup-open:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${compact ? "max-w-80 gap-2 pr-3" : "max-w-52 gap-3 pr-5"}`}
       >
         <Avatar className={`${compact ? "size-9" : "size-12"} after:border-0`}>
           {user.image ? <AvatarImage src={user.image} alt="" /> : null}
@@ -44,12 +44,15 @@ export function UserAvatarDropdown({
             {initial}
           </AvatarFallback>
         </Avatar>
-        <span className={compact ? "sr-only" : "min-w-0"}>
-          <span className="block truncate text-base font-semibold leading-6 text-primary">
+        <span className="min-w-0">
+          <span className={`block truncate font-semibold text-primary ${compact ? "text-sm leading-5" : "text-base leading-6"}`}>
             {name}
           </span>
-          <span className="block truncate text-sm font-normal capitalize leading-5 text-muted-foreground">
-            {entry.displayLabel}
+          <span
+            className={`block truncate font-normal text-muted-foreground ${compact ? "text-xs leading-4" : "text-sm capitalize leading-5"}`}
+            title={compact ? user.email : undefined}
+          >
+            {compact ? user.email : entry.displayLabel}
           </span>
         </span>
       </DropdownMenuTrigger>
